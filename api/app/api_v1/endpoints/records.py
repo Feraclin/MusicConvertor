@@ -1,30 +1,78 @@
-import os
+from pathlib import Path
+from typing import List
 from uuid import uuid4
 
-from fastapi import APIRouter, UploadFile, File
-from pydub import AudioSegment
-from starlette.responses import FileResponse
+from fastapi import APIRouter, UploadFile, File, Request, HTTPException
+from sqlalchemy import ScalarResult
+from starlette.responses import FileResponse, JSONResponse
+from api.app.api_v1.deps import app_dependency, user_dependency
+from api.app.models import UserModel
+from api.app.schemas import RecordSchema
+from api.app.utils import convert_wav_to_mpa3, generate_record_url
 
 router = APIRouter()
 
+
 @router.post("/records/")
-async def add_record(user_id: str, access_token: str, file: UploadFile = File(...)):
-
-    if user_id in users_db and users_db[user_id]["access_token"] == access_token:
-
-        audio = AudioSegment.from_file(file.file, format="wav")
+async def add_record(
+    access_token: str,
+    request: Request,
+    file: UploadFile = File(...),
+    app=app_dependency,
+    user: UserModel = user_dependency
+):
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if access_token != str(user.access_token):
+        raise HTTPException(status_code=403, detail="Access token established or wrong")
+    try:
         record_id = str(uuid4())
-        record_url = f"http://host:port/record?id={record_id}&user={user_id}"
-        record_path = os.path.join("records", f"{record_id}.mp3")
-        audio.export(record_path, format="mp3")
+        convert_wav_to_mpa3(file=file, record_id=record_id)
+        await app.state.records.add_record_to_db(user_id=user.id_,
+                                                 record_id=record_id,
+                                                 title=file.filename.rstrip(".wav"))
+        record_url = generate_record_url(user_id=user.id_,
+                                         record_id=record_id,
+                                         host=request.headers.get('host'))
         return {"record_url": record_url}
-    else:
-        return {"error": "User not found or wrong token"}
+    except Exception as e:
+        app.state.logger.info(e)
+        raise HTTPException(status_code=418)
 
 
-@router.get("/record/")
-async def get_record(record_id: str, user_id: str):
-    if user_id in users_db and f"records/{record_id}.mp3" in os.listdir():
-        return FileResponse(f"{record_id}.mp3")
+@router.get("/record")
+async def get_record(record_id: str, app=app_dependency, user: UserModel = user_dependency):
+    base_dir = Path(__file__).resolve().parent.parent.parent / "records"
+    record = base_dir / f"{record_id}.mp3"
+    title = await app.state.records.get_record_title(record_id=record_id)
+    if user:
+        if record.exists():
+            return FileResponse(record, filename=title)
+        else:
+            raise HTTPException(status_code=404, detail="Record not found")
     else:
-        return {"error": "Запись не найдена или доступ запрещен"}
+        raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.get("/record/list")
+async def get_record_list_by_user(access_token: str,
+                                  request: Request,
+                                  user: UserModel = user_dependency,
+                                  app=app_dependency,
+                                  ):
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    print(access_token, user.access_token)
+    if str(user.access_token) != access_token:
+        raise HTTPException(status_code=403, detail="Access token established or wrong")
+
+    record_list = (await app.state.records.get_records_list_by_user(user_id=user.id_)).all()
+    record_dct = {k.title: generate_record_url(user_id=user.id_,
+                                               record_id=k.record_id,
+                                               host=request.headers.get('host')) for k in record_list}
+    return record_dct
+
+
+@router.get("/teapot")
+async def teapot():
+    raise HTTPException(status_code=418)

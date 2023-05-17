@@ -1,14 +1,22 @@
 import logging
 
+import pydantic
 from sqlalchemy import URL, Result
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_scoped_session, async_sessionmaker, \
-    create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_scoped_session,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import MappedAsDataclass, DeclarativeBase, sessionmaker
 
 from api.app.config import ConfigEnv
 
 
-class Base(MappedAsDataclass, DeclarativeBase):
+class Base(MappedAsDataclass,
+           DeclarativeBase,
+           dataclass_callable=pydantic.dataclasses.dataclass):
     pass
 
 
@@ -56,10 +64,8 @@ class Database:
         await self.engine_.dispose()
         return res
 
-    async def add(self, model) -> Result:
+    async def add(self, model) -> None:
         async with self.session() as session:
-            res = await session.add(model)
+            session.add(model)
             await session.commit()
         await self.engine_.dispose()
-        return res
-
