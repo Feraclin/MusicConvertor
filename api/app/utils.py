@@ -6,8 +6,7 @@ from pydub import AudioSegment
 
 def convert_wav_to_mpa3(file: UploadFile, record_id):
     audio = AudioSegment.from_file(file.file, format="wav")
-    record_path = os.path.join("records", f"{record_id}.mp3")
-    print(record_path)
+    record_path = os.path.join("api/app/records", f"{record_id}.mp3")
     audio.export(record_path, format="mp3")
 
 

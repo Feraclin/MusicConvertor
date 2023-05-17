@@ -62,7 +62,6 @@ async def get_record_list_by_user(
 ):
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    print(access_token, user.access_token)
     if str(user.access_token) != access_token:
         raise HTTPException(status_code=403, detail="Access token established or wrong")
 
