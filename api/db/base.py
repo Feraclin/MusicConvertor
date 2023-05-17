@@ -14,9 +14,11 @@ from sqlalchemy.orm import MappedAsDataclass, DeclarativeBase, sessionmaker
 from api.app.config import ConfigEnv
 
 
-class Base(MappedAsDataclass,
-           DeclarativeBase,
-           dataclass_callable=pydantic.dataclasses.dataclass):
+class Base(
+    MappedAsDataclass,
+    DeclarativeBase,
+    dataclass_callable=pydantic.dataclasses.dataclass,
+):
     pass
 
 

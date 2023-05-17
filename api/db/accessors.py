@@ -40,7 +40,9 @@ class UserAccessor(BaseAccessor):
 
 class RecordAccessor(BaseAccessor):
     async def add_record_to_db(self, user_id: str, record_id: str, title: str) -> None:
-        record = insert(RecordModel).values(user_id=user_id, record_id=record_id, title=title)
+        record = insert(RecordModel).values(
+            user_id=user_id, record_id=record_id, title=title
+        )
         await self.database.execute_query(record)
 
     async def get_record_title(self, record_id: str) -> str | None:

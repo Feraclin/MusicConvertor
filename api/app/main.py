@@ -51,7 +51,9 @@ async def root():
     return {"message": "Hello World"}
 
 
-app.include_router(router=api_routers, prefix="/api_v1", dependencies=[app_dependency, user_dependency])
+app.include_router(
+    router=api_routers, prefix="/api_v1", dependencies=[app_dependency, user_dependency]
+)
 
 if __name__ == "__main__":
     import uvicorn
