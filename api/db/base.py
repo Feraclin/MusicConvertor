@@ -55,3 +55,11 @@ class Database:
             await session.commit()
         await self.engine_.dispose()
         return res
+
+    async def add(self, model) -> Result:
+        async with self.session() as session:
+            res = await session.add(model)
+            await session.commit()
+        await self.engine_.dispose()
+        return res
+
