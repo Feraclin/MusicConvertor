@@ -1,18 +1,18 @@
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, UploadFile, File, Request, HTTPException
+from fastapi import APIRouter, UploadFile, File, Request, HTTPException, Depends
 from starlette.responses import FileResponse
-from api.app.api_v1.deps import app_dependency, user_dependency
+from api.app.api_v1.deps import app_dependency, user_dependency, get_user_by_id
 from api.app.models import UserModel
 from api.app.utils import convert_wav_to_mpa3, generate_record_url
 
 router = APIRouter()
 
 
-@router.post("/records/")
+@router.post("/record/")
 async def add_record(
-    access_token: str,
+    user: U
     request: Request,
     file: UploadFile = File(...),
     app=app_dependency,
@@ -20,10 +20,9 @@ async def add_record(
 ):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if access_token != str(user.access_token):
-        raise HTTPException(status_code=403, detail="Access token established or wrong")
     try:
         record_id = str(uuid4())
+        print("test")
         convert_wav_to_mpa3(file=file, record_id=record_id)
         await app.state.records.add_record_to_db(
             user_id=user.id_, record_id=record_id, title=file.filename.rstrip(".wav")
@@ -39,7 +38,9 @@ async def add_record(
 
 @router.get("/record")
 async def get_record(
-    record_id: str, app=app_dependency, user: UserModel = user_dependency
+    record_id: str,
+    app=app_dependency,
+    user: UserModel = Depends(get_user_by_id)
 ):
     base_dir = Path(__file__).resolve().parent.parent.parent / "records"
     record = base_dir / f"{record_id}.mp3"
@@ -57,9 +58,10 @@ async def get_record(
 async def get_record_list_by_user(
     access_token: str,
     request: Request,
-    user: UserModel = user_dependency,
     app=app_dependency,
+    user=Depends(get_user_by_id)
 ):
+
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     if str(user.access_token) != access_token:

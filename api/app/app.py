@@ -52,5 +52,7 @@ async def root():
 
 
 app.include_router(
-    router=api_routers, prefix="/api_v1", dependencies=[app_dependency]
+    router=api_routers,
+    prefix="/api",
+    dependencies=[app_dependency]
 )

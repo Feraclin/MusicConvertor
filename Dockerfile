@@ -18,7 +18,8 @@ ENV YOUR_ENV=dev \
     POETRY_NO_INTERACTION=1 \
     POETRY_CACHE_DIR='/var/cache/pypoetry' \
     POETRY_HOME='/usr/local'\
-    PATH="/usr/local/bin:${PATH}"
+    # PATH:
+    PATH="/usr/local/bin:${PATH}"\
 
 RUN apk add --no-cache bash
 RUN apk add --no-cache ffmpeg

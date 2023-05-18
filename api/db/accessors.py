@@ -1,8 +1,8 @@
 import logging
 import uuid
+from typing import Any
 
-from sqlalchemy import select, insert
-
+from sqlalchemy import select, insert, ScalarResult
 from api.app.models import UserModel, RecordModel
 from api.db.base import Database
 
@@ -24,18 +24,23 @@ class UserAccessor(BaseAccessor):
         res = await self.database.execute_query(query)
         return res.scalar_one_or_none()
 
-    async def create_user(self, username) -> tuple[uuid.UUID, uuid.UUID]:
+    async def create_user(self, username) -> UserModel:
         user: UserModel = await self.get_user_by_username(username=username)
         if user:
             self.logger.info(f"{user.username} already in base")
-            return user.id_, user.access_token
+            return user
         else:
             user = UserModel(
                 id_=uuid.uuid4(), username=username, access_token=uuid.uuid4()
             )
             await self.database.add(user)
             self.logger.info(f"{user.username} created")
-            return user.id_, user.access_token
+            return user
+
+    async def get_users_list(self) -> ScalarResult[UserModel]:
+        query = select(UserModel)
+        user_list = await self.database.execute_query(query)
+        return user_list.scalars()
 
 
 class RecordAccessor(BaseAccessor):
