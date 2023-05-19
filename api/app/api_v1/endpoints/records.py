@@ -10,7 +10,7 @@ from api.app.utils import convert_wav_to_mpa3, generate_record_url
 router = APIRouter()
 
 
-@router.post("/records/")
+@router.post("/record/")
 async def add_record(
     access_token: str,
     request: Request,

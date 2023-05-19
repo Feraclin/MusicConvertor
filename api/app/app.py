@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 
-from api.app.api_v1.deps import app_dependency, user_dependency
+from api.app.api_v1.deps import app_dependency
 from api.app.api_v1.routers import api_routers
 from api.app.config import ConfigEnv, config_api
 from api.db.accessors import UserAccessor, RecordAccessor
@@ -51,6 +51,4 @@ async def root():
     return {"message": "Hello World"}
 
 
-app.include_router(
-    router=api_routers, prefix="/api_v1", dependencies=[app_dependency]
-)
+app.include_router(router=api_routers, prefix="/api_v1", dependencies=[app_dependency])

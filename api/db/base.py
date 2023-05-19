@@ -4,12 +4,10 @@ import pydantic
 from sqlalchemy import URL, Result
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
-    AsyncSession,
-    async_scoped_session,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import MappedAsDataclass, DeclarativeBase, sessionmaker
+from sqlalchemy.orm import MappedAsDataclass, DeclarativeBase
 
 from api.app.config import ConfigEnv
 
@@ -38,7 +36,7 @@ class Database:
             )
         self.engine_: AsyncEngine | None = None
         self.db_: DeclarativeBase | None = None
-        self.session: AsyncSession | async_scoped_session | sessionmaker | async_sessionmaker | None = (
+        self.session: async_sessionmaker | None = (
             None
         )
         self.logger = logging.getLogger("database")
